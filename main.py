@@ -170,9 +170,9 @@ def _render_summary(df: pd.DataFrame) -> None:
                 "missing values": [summary["missing_counts"][c] for c in summary["columns"]],
             }
         )
-        st.dataframe(schema, use_container_width=True, hide_index=True)
+        st.dataframe(schema, width='stretch', hide_index=True)
     with st.expander("Data preview (first 10 rows)"):
-        st.dataframe(df.head(10), use_container_width=True)
+        st.dataframe(df.head(10), width='stretch')
 
 
 def _render_overview_charts(charts: list[tuple]) -> None:
@@ -192,8 +192,12 @@ def _render_overview_charts(charts: list[tuple]) -> None:
     st.subheader("Overview charts")
     cols = st.columns(len(charts))
     for col, (fig, _path, _kind, name) in zip(cols, charts):
-        col.pyplot(fig)
-        col.caption(name)
+        try:
+            col.pyplot(fig)
+            col.caption(name)
+            visualization.plt.close(fig)
+        except Exception:
+            col.warning(f"Chart for '{name}' could not be rendered.")
 
 
 def _render_overview_tables(df: pd.DataFrame) -> None:
@@ -209,14 +213,14 @@ def _render_overview_tables(df: pd.DataFrame) -> None:
     numeric_summary = analysis.get_numeric_overview(df)
     if not numeric_summary.empty:
         st.markdown("**Numeric columns**")
-        st.dataframe(numeric_summary, use_container_width=True)
+        st.dataframe(numeric_summary, width='stretch')
 
     categorical_summary = analysis.get_categorical_overview(df)
     if categorical_summary:
         st.markdown("**Categorical columns**")
         table_cols = st.columns(min(len(categorical_summary), 3))
         for i, (col, table) in enumerate(categorical_summary.items()):
-            table_cols[i % len(table_cols)].dataframe(table, use_container_width=True)
+            table_cols[i % len(table_cols)].dataframe(table, width='stretch')
 
 
 def _run_and_store(df: pd.DataFrame, question: str) -> None:
@@ -284,7 +288,11 @@ def _render_answer_top() -> None:
     if charts:
         cols = st.columns(len(charts))
         for col, (fig, _path, _kind) in zip(cols, charts):
-            col.pyplot(fig)
+            try:
+                col.pyplot(fig)
+                visualization.plt.close(fig)
+            except Exception:
+                col.warning("Chart could not be rendered.")
     if answer.get("explanation"):
         st.info(f"**AI insight:** {answer['explanation']}")
     st.divider()
@@ -323,23 +331,45 @@ def _render_download_buttons(df: pd.DataFrame, overview_charts: list[tuple]) -> 
     """Render compact CSV and PDF download buttons inline."""
     import streamlit as st
 
-    chart_paths = [path for _, path, _kind, _name in overview_charts]
-    pdf_bytes = report.build_pdf_report(
-        df, answer=st.session_state.get("last_answer"), overview_chart_paths=chart_paths
-    )
     dl1, dl2, _ = st.columns([1, 1, 5])
+
+    # CSV: lightweight, build inline
+    try:
+        csv_bytes = report.build_csv_report(df)
+    except Exception:
+        csv_bytes = b""
+
     dl1.download_button(
         "⬇️ CSV",
-        data=report.build_csv_report(df),
+        data=csv_bytes,
         file_name="analysis_report.csv",
         mime="text/csv",
+        disabled=not csv_bytes,
     )
-    dl2.download_button(
-        "⬇️ PDF",
-        data=pdf_bytes,
-        file_name="analysis_report.pdf",
-        mime="application/pdf",
-    )
+
+    # PDF: only build when button is clicked, via session state flag
+    if dl2.button("⬇️ PDF"):
+        try:
+            chart_paths = [p for _, p, _, _ in overview_charts if isinstance(p, str)]
+            pdf_bytes = report.build_pdf_report(
+                df,
+                answer=st.session_state.get("last_answer"),
+                overview_chart_paths=chart_paths,
+            )
+            st.session_state["_pdf_cache"] = pdf_bytes
+        except Exception as exc:
+            st.error(f"PDF generation failed: {exc}")
+            st.session_state.pop("_pdf_cache", None)
+
+    if "pdf_cache" in st.session_state or "_pdf_cache" in st.session_state:
+        pdf_bytes = st.session_state.get("_pdf_cache", b"")
+        if pdf_bytes:
+            st.download_button(
+                "📥 Save PDF",
+                data=pdf_bytes,
+                file_name="analysis_report.pdf",
+                mime="application/pdf",
+            )
 
 
 def _render_question_bar(df: pd.DataFrame) -> None:
