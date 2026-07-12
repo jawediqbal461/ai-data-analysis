@@ -1,0 +1,21 @@
+# Data stack
+pandas==2.3.3
+numpy==2.4.1
+
+# Visualization
+matplotlib==3.11.0
+seaborn==0.13.2
+
+# Web interface
+streamlit==1.53.1
+
+# Configuration (.env loading)
+python-dotenv==1.2.2
+
+# LLM SDKs: openai covers OpenAI, Groq and Gemini (OpenAI-compatible
+# endpoints); anthropic covers Claude.
+openai==2.45.0
+anthropic==0.116.0
+
+# PDF report generation
+reportlab==5.0.0

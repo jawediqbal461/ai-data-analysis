@@ -1,0 +1,181 @@
+order_id,product,category,city,customer_age,quantity,price,order_date
+ORD-1001,Noise-Cancelling Headphones,Electronics,Miami,21,1,128.52,2025-01-01
+ORD-1002,Blender,Home & Kitchen,Miami,67,1,61.44,2025-01-09
+ORD-1003,Blender,Home & Kitchen,New York,41,4,58.42,2025-01-11
+ORD-1004,USB-C Hub,Electronics,New York,52,1,32.52,2025-01-12
+ORD-1005,Self-Help Guide,Books,Los Angeles,30,3,20.2,2025-01-12
+ORD-1006,Coffee Maker,Home & Kitchen,Los Angeles,62,2,95.0,2025-01-13
+ORD-1007,Wireless Mouse,Electronics,Chicago,,1,26.37,2025-01-14
+ORD-1008,Blender,Home & Kitchen,Chicago,,2,54.09,2025-01-16
+ORD-1009,Self-Help Guide,Books,Los Angeles,45,3,19.81,2025-01-18
+ORD-1010,Denim Jeans,Clothing,Seattle,43,1,42.03,2025-01-18
+ORD-1011,Bluetooth Speaker,Electronics,Boston,23,3,53.24,2025-01-18
+ORD-1012,Cotton T-Shirt,Clothing,Seattle,62,4,14.18,2025-01-19
+ORD-1013,Bluetooth Speaker,Electronics,New York,48,2,46.01,2025-01-19
+ORD-1014,Denim Jeans,Clothing,Los Angeles,33,4,43.8,2025-01-20
+ORD-1015,Noise-Cancelling Headphones,Electronics,New York,59,5,116.5,2025-01-20
+ORD-1016,Cookbook,Books,Boston,44,1,23.88,2025-01-21
+ORD-1017,Wireless Mouse,Electronics,Los Angeles,31,1,28.32,2025-01-21
+ORD-1018,Denim Jeans,Clothing,Houston,29,1,44.78,2025-01-21
+ORD-1019,Non-Stick Cookware Set,Home & Kitchen,Boston,65,1,125.99,2025-01-22
+ORD-1020,Coffee Maker,Home & Kitchen,Chicago,43,2,82.09,2025-01-28
+ORD-1021,Non-Stick Cookware Set,Home & Kitchen,Los Angeles,42,4,127.22,2025-01-28
+ORD-1022,Coffee Maker,Home & Kitchen,New York,65,2,84.13,2025-01-30
+ORD-1023,Bluetooth Speaker,Electronics,Seattle,61,2,45.56,2025-01-31
+ORD-1024,Eau de Parfum,Beauty,Miami,18,1,63.26,2025-02-01
+ORD-1025,Self-Help Guide,Books,Boston,53,1,17.1,2025-02-01
+ORD-1026,Running Sneakers,Clothing,New York,56,1,73.13,2025-02-02
+ORD-1027,Running Sneakers,Clothing,Seattle,31,1,81.96,2025-02-03
+ORD-1028,Noise-Cancelling Headphones,Electronics,Seattle,23,3,131.37,2025-02-04
+ORD-1029,Noise-Cancelling Headphones,Electronics,Denver,47,1,126.31,2025-02-05
+ORD-1030,Smartwatch,Electronics,Los Angeles,32,1,188.28,2025-02-07
+ORD-1031,Cotton T-Shirt,Clothing,Los Angeles,34,2,14.43,2025-02-09
+ORD-1032,Denim Jeans,Clothing,New York,21,4,44.58,2025-02-09
+ORD-1033,Wireless Mouse,Electronics,New York,45,1,27.34,2025-02-09
+ORD-1034,Denim Jeans,Clothing,Denver,27,1,45.81,2025-02-12
+ORD-1035,Eau de Parfum,Beauty,New York,48,5,68.46,2025-02-12
+ORD-1036,Eau de Parfum,Beauty,Denver,28,5,60.51,2025-02-15
+ORD-1037,Noise-Cancelling Headphones,Electronics,Miami,24,1,134.89,2025-02-18
+ORD-1038,LED Desk Lamp,Home & Kitchen,Los Angeles,40,1,23.64,2025-02-18
+ORD-1039,Smartwatch,Electronics,Chicago,36,5,219.05,2025-02-19
+ORD-1040,LED Desk Lamp,Home & Kitchen,Houston,60,3,23.69,2025-02-20
+ORD-1041,Wireless Mouse,Electronics,Houston,42,2,28.22,2025-02-20
+ORD-1042,Coffee Maker,Home & Kitchen,Los Angeles,26,3,81.9,2025-02-22
+ORD-1043,Self-Help Guide,Books,Houston,53,2,17.47,2025-02-27
+ORD-1044,Mystery Novel,Books,Los Angeles,61,4,12.79,2025-02-28
+ORD-1045,Zip Hoodie,Clothing,Miami,41,1,40.67,2025-03-01
+ORD-1046,LED Desk Lamp,Home & Kitchen,Los Angeles,46,2,20.31,2025-03-02
+ORD-1047,Bluetooth Speaker,Electronics,,26,1,45.64,2025-03-02
+ORD-1048,Smartwatch,Electronics,New York,56,1,183.2,2025-03-02
+ORD-1049,Cotton T-Shirt,Clothing,Boston,18,5,13.64,2025-03-02
+ORD-1050,Wireless Mouse,Electronics,Los Angeles,19,3,28.33,2025-03-03
+ORD-1051,Cookbook,Books,Los Angeles,30,5,24.77,2025-03-03
+ORD-1052,Blender,Home & Kitchen,Houston,37,1,55.09,2025-03-05
+ORD-1053,Mystery Novel,Books,Denver,44,3,11.7,2025-03-05
+ORD-1054,Wireless Mouse,Electronics,Boston,29,2,23.99,2025-03-09
+ORD-1055,LED Desk Lamp,Home & Kitchen,Chicago,47,1,20.66,2025-03-09
+ORD-1056,Zip Hoodie,Clothing,Los Angeles,63,1,43.47,2025-03-09
+ORD-1057,Self-Help Guide,Books,New York,66,3,19.08,2025-03-10
+ORD-1058,Bluetooth Speaker,Electronics,Denver,65,2,47.17,2025-03-11
+ORD-1059,Bluetooth Speaker,Electronics,Denver,41,2,52.34,2025-03-11
+ORD-1060,Bluetooth Speaker,Electronics,Chicago,26,4,53.68,2025-03-12
+ORD-1061,Cookbook,Books,Miami,35,3,24.19,2025-03-14
+ORD-1062,Smartwatch,Electronics,Los Angeles,46,1,199.37,2025-03-15
+ORD-1063,Face Cream,Beauty,New York,27,2,27.59,2025-03-16
+ORD-1064,Wireless Mouse,Electronics,Houston,42,1,27.18,2025-03-17
+ORD-1065,Shampoo Set,Beauty,New York,20,5,20.59,2025-03-19
+ORD-1066,Blender,Home & Kitchen,Los Angeles,53,4,60.62,2025-03-19
+ORD-1067,Eau de Parfum,Beauty,New York,41,4,62.71,2025-03-20
+ORD-1068,Smartwatch,Electronics,Miami,66,1,193.4,2025-03-21
+ORD-1069,Smartwatch,Electronics,Seattle,,3,218.54,2025-03-21
+ORD-1070,Cookbook,Books,,54,4,23.83,2025-03-22
+ORD-1071,Noise-Cancelling Headphones,Electronics,Los Angeles,25,3,123.09,2025-03-22
+ORD-1072,Smartwatch,Electronics,Chicago,64,2,210.98,2025-03-24
+ORD-1073,Wireless Mouse,Electronics,Los Angeles,37,3,27.13,2025-03-25
+ORD-1074,Zip Hoodie,Clothing,Seattle,59,1,38.7,2025-03-26
+ORD-1075,Wireless Mouse,Electronics,New York,22,4,27.07,2025-03-26
+ORD-1076,Cotton T-Shirt,Clothing,Chicago,35,1,13.77,2025-03-27
+ORD-1077,Cookbook,Books,Boston,36,3,27.06,2025-03-28
+ORD-1078,Denim Jeans,Clothing,Los Angeles,49,1,44.4,2025-03-28
+ORD-1079,Mystery Novel,Books,Chicago,31,2,11.38,2025-03-28
+ORD-1080,Smartwatch,Electronics,,32,4,188.5,2025-03-31
+ORD-1081,Face Cream,Beauty,Los Angeles,34,1,25.43,2025-03-31
+ORD-1082,Running Sneakers,Clothing,Seattle,36,2,85.84,2025-04-01
+ORD-1083,LED Desk Lamp,Home & Kitchen,Miami,29,2,20.29,2025-04-01
+ORD-1084,Zip Hoodie,Clothing,Chicago,49,1,36.09,2025-04-03
+ORD-1085,Wireless Mouse,Electronics,Los Angeles,62,1,26.32,2025-04-05
+ORD-1086,Face Cream,Beauty,Denver,26,2,25.56,2025-04-05
+ORD-1087,Cotton T-Shirt,Clothing,,27,2,13.72,2025-04-05
+ORD-1088,USB-C Hub,Electronics,New York,21,1,37.55,2025-04-06
+ORD-1089,Non-Stick Cookware Set,Home & Kitchen,Miami,23,2,108.7,2025-04-06
+ORD-1090,Noise-Cancelling Headphones,Electronics,,32,3,131.74,2025-04-08
+ORD-1091,USB-C Hub,Electronics,Houston,26,1,33.5,2025-04-09
+ORD-1092,Mystery Novel,Books,Los Angeles,59,2,13.7,2025-04-12
+ORD-1093,Bluetooth Speaker,Electronics,Seattle,36,3,47.82,2025-04-13
+ORD-1094,Smartwatch,Electronics,Seattle,45,4,201.55,2025-04-13
+ORD-1095,Self-Help Guide,Books,New York,34,1,17.01,2025-04-14
+ORD-1096,Face Cream,Beauty,Seattle,40,3,28.81,2025-04-15
+ORD-1097,USB-C Hub,Electronics,New York,36,1,36.36,2025-04-17
+ORD-1098,Cotton T-Shirt,Clothing,Los Angeles,42,4,16.32,2025-04-18
+ORD-1099,Cotton T-Shirt,Clothing,Los Angeles,55,1,14.82,2025-04-19
+ORD-1100,Self-Help Guide,Books,New York,46,2,20.55,2025-04-20
+ORD-1101,Face Cream,Beauty,Houston,24,4,27.81,2025-04-23
+ORD-1102,Blender,Home & Kitchen,Denver,59,1,60.77,2025-04-23
+ORD-1103,Non-Stick Cookware Set,Home & Kitchen,Seattle,63,4,130.38,2025-04-24
+ORD-1104,Noise-Cancelling Headphones,Electronics,Houston,38,2,136.37,2025-04-24
+ORD-1105,Smartwatch,Electronics,Los Angeles,56,2,201.92,2025-04-27
+ORD-1106,Blender,Home & Kitchen,Denver,44,1,58.42,2025-04-27
+ORD-1107,LED Desk Lamp,Home & Kitchen,Miami,24,2,24.57,2025-04-27
+ORD-1108,Wireless Mouse,Electronics,New York,48,1,25.38,2025-04-28
+ORD-1109,Smartwatch,Electronics,Miami,60,2,181.73,2025-04-28
+ORD-1110,Zip Hoodie,Clothing,Los Angeles,22,3,43.31,2025-04-29
+ORD-1111,Non-Stick Cookware Set,Home & Kitchen,Los Angeles,55,1,121.85,2025-04-29
+ORD-1112,Self-Help Guide,Books,Houston,36,2,19.68,2025-04-30
+ORD-1113,Smartwatch,Electronics,Seattle,30,1,218.02,2025-05-04
+ORD-1114,Self-Help Guide,Books,Los Angeles,63,4,18.3,2025-05-05
+ORD-1115,Eau de Parfum,Beauty,Boston,58,4,62.3,2025-05-06
+ORD-1116,Non-Stick Cookware Set,Home & Kitchen,Seattle,44,3,121.08,2025-05-06
+ORD-1117,Shampoo Set,Beauty,Seattle,59,5,19.53,2025-05-07
+ORD-1118,Non-Stick Cookware Set,Home & Kitchen,Los Angeles,55,1,117.77,2025-05-09
+ORD-1119,Coffee Maker,Home & Kitchen,New York,23,1,91.62,2025-05-10
+ORD-1120,Bluetooth Speaker,Electronics,Los Angeles,58,4,51.65,2025-05-10
+ORD-1121,Smartwatch,Electronics,Seattle,38,2,197.37,2025-05-11
+ORD-1122,USB-C Hub,Electronics,Seattle,41,2,34.05,2025-05-13
+ORD-1123,Cookbook,Books,Houston,35,2,23.89,2025-05-13
+ORD-1124,Mystery Novel,Books,Houston,44,1,12.89,2025-05-13
+ORD-1125,USB-C Hub,Electronics,Houston,50,4,31.67,2025-05-16
+ORD-1126,Denim Jeans,Clothing,Seattle,52,5,41.41,2025-05-16
+ORD-1127,Non-Stick Cookware Set,Home & Kitchen,Chicago,56,5,121.29,2025-05-16
+ORD-1128,Non-Stick Cookware Set,Home & Kitchen,Miami,26,5,124.34,2025-05-17
+ORD-1129,Smartwatch,Electronics,New York,45,1,187.59,2025-05-18
+ORD-1130,Smartwatch,Electronics,New York,64,1,214.42,2025-05-18
+ORD-1131,Shampoo Set,Beauty,Chicago,61,5,19.39,2025-05-18
+ORD-1132,Self-Help Guide,Books,Miami,27,5,16.89,2025-05-19
+ORD-1133,Non-Stick Cookware Set,Home & Kitchen,Los Angeles,21,2,110.78,2025-05-19
+ORD-1134,Non-Stick Cookware Set,Home & Kitchen,Seattle,50,2,121.68,2025-05-21
+ORD-1135,Smartwatch,Electronics,Houston,40,2,194.75,2025-05-21
+ORD-1136,Non-Stick Cookware Set,Home & Kitchen,Chicago,48,2,127.69,2025-05-22
+ORD-1137,Running Sneakers,Clothing,Seattle,59,3,73.54,2025-05-22
+ORD-1138,Zip Hoodie,Clothing,Chicago,48,1,39.31,2025-05-22
+ORD-1139,Shampoo Set,Beauty,Miami,36,2,21.7,2025-05-23
+ORD-1140,Cookbook,Books,Los Angeles,32,3,23.07,2025-05-24
+ORD-1141,Cotton T-Shirt,Clothing,Miami,60,2,14.86,2025-05-24
+ORD-1142,Bluetooth Speaker,Electronics,Chicago,52,1,47.31,2025-05-27
+ORD-1143,Noise-Cancelling Headphones,Electronics,Seattle,,1,126.15,2025-05-28
+ORD-1144,Denim Jeans,Clothing,Houston,35,1,44.24,2025-05-30
+ORD-1145,Denim Jeans,Clothing,New York,23,2,45.2,2025-05-30
+ORD-1146,Blender,Home & Kitchen,Seattle,44,1,61.81,2025-05-31
+ORD-1147,Denim Jeans,Clothing,Los Angeles,55,2,42.05,2025-05-31
+ORD-1148,Bluetooth Speaker,Electronics,New York,44,2,50.01,2025-06-02
+ORD-1149,Non-Stick Cookware Set,Home & Kitchen,Chicago,49,2,129.54,2025-06-03
+ORD-1150,USB-C Hub,Electronics,Chicago,40,4,31.99,2025-06-04
+ORD-1151,Shampoo Set,Beauty,Chicago,19,5,21.51,2025-06-05
+ORD-1152,Cotton T-Shirt,Clothing,Seattle,65,5,15.19,2025-06-05
+ORD-1153,Mystery Novel,Books,New York,52,3,12.17,2025-06-06
+ORD-1154,Mystery Novel,Books,Chicago,66,2,11.95,2025-06-06
+ORD-1155,Running Sneakers,Clothing,Houston,45,1,76.71,2025-06-08
+ORD-1156,Zip Hoodie,Clothing,Denver,,1,39.65,2025-06-09
+ORD-1157,Blender,Home & Kitchen,New York,60,4,57.64,2025-06-09
+ORD-1158,Noise-Cancelling Headphones,Electronics,New York,,1,119.04,2025-06-11
+ORD-1159,Blender,Home & Kitchen,Los Angeles,47,2,59.65,2025-06-13
+ORD-1160,Face Cream,Beauty,New York,,1,27.84,2025-06-13
+ORD-1161,Denim Jeans,Clothing,Chicago,34,3,46.67,2025-06-13
+ORD-1162,Wireless Mouse,Electronics,Miami,23,3,28.32,2025-06-14
+ORD-1163,Running Sneakers,Clothing,Miami,21,3,78.53,2025-06-15
+ORD-1164,Cotton T-Shirt,Clothing,Los Angeles,59,1,16.49,2025-06-16
+ORD-1165,Non-Stick Cookware Set,Home & Kitchen,Chicago,,2,123.93,2025-06-16
+ORD-1166,Denim Jeans,Clothing,Chicago,43,1,46.44,2025-06-17
+ORD-1167,Denim Jeans,Clothing,Miami,30,1,47.03,2025-06-18
+ORD-1168,Smartwatch,Electronics,Los Angeles,62,1,194.35,2025-06-18
+ORD-1169,Eau de Parfum,Beauty,Seattle,,1,65.38,2025-06-19
+ORD-1170,Running Sneakers,Clothing,Chicago,44,1,87.45,2025-06-21
+ORD-1171,Noise-Cancelling Headphones,Electronics,Houston,19,1,135.05,2025-06-22
+ORD-1172,Cookbook,Books,New York,32,4,27.3,2025-06-22
+ORD-1173,Non-Stick Cookware Set,Home & Kitchen,New York,,4,113.18,2025-06-23
+ORD-1174,Coffee Maker,Home & Kitchen,Los Angeles,26,3,94.34,2025-06-23
+ORD-1175,Zip Hoodie,Clothing,Los Angeles,60,5,40.43,2025-06-23
+ORD-1176,LED Desk Lamp,Home & Kitchen,Los Angeles,60,1,20.89,2025-06-24
+ORD-1177,Face Cream,Beauty,Chicago,53,3,26.36,2025-06-26
+ORD-1178,Smartwatch,Electronics,Los Angeles,,3,196.92,2025-06-26
+ORD-1179,Running Sneakers,Clothing,New York,36,1,79.12,2025-06-27
+ORD-1180,Denim Jeans,Clothing,,38,3,47.67,2025-06-30
