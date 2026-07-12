@@ -549,13 +549,37 @@ def _fallback(df: pd.DataFrame, question: str) -> QAResult:
             return QAResult(question=question, answer_text=ai_text, success=True, chart_kind="none")
     except Exception:
         pass
-    cols = ", ".join(df.columns)
+
+    # AI unavailable — return a data-driven summary as a helpful fallback.
+    return _answer_data_summary(df, question)
+
+
+def _answer_data_summary(df: pd.DataFrame, question: str) -> QAResult:
+    """Return a plain-text data summary when AI is unavailable or question is general."""
+    rows = len(df)
+    cols_count = df.shape[1]
+    num_cols = analysis.numeric_columns(df)
+    cat_cols = analysis.categorical_columns(df)
+
+    lines = [
+        f"This dataset has {rows:,} rows and {cols_count} columns.",
+    ]
+    if num_cols:
+        stats = df[num_cols].describe().round(2)
+        for col in num_cols[:3]:
+            lines.append(
+                f"• {col}: avg={stats.loc['mean', col]:,.2f}, "
+                f"min={stats.loc['min', col]:,.2f}, max={stats.loc['max', col]:,.2f}"
+            )
+    if cat_cols:
+        for col in cat_cols[:2]:
+            top = df[col].value_counts().index[0]
+            lines.append(f"• Most common {col}: {top}")
+
     return QAResult(
         question=question,
-        answer_text=(
-            "Sorry, I couldn't understand that question. Try asking about "
-            "the highest/lowest, average, total, or most frequent values of a column. "
-            f"Available columns: {cols}."
-        ),
-        success=False,
+        answer_text=" ".join(lines),
+        success=True,
+        chart_kind="none",
+        stats={"rows": rows, "cols": cols_count},
     )
