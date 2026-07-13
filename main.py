@@ -185,7 +185,7 @@ def _render_overview_charts(df: pd.DataFrame) -> None:
     st.subheader("📊 Overview Charts")
     cols = st.columns(min(len(figs), 2))
     for i, fig in enumerate(figs):
-        cols[i % 2].plotly_chart(fig, width="stretch")
+        cols[i % 2].plotly_chart(fig, width="stretch", key=f"overview_fig_{i}")
 
 
 def _render_overview_tables(df: pd.DataFrame) -> None:
@@ -246,13 +246,26 @@ def _run_and_store(df: pd.DataFrame, question: str) -> None:
             "plotly_figs": plotly_figs,
             "explanation": explanation,
         }
-        st.session_state.setdefault("chat_history", []).append(entry)
-        st.session_state["last_answer"] = entry
+        _append_history(entry)
     except Exception as exc:
         msg = str(exc) or "An unexpected error occurred."
-        entry = {"question": question, "error": f"Analysis failed: {msg}"}
-        st.session_state.setdefault("chat_history", []).append(entry)
-        st.session_state["last_answer"] = entry
+        _append_history({"question": question, "error": f"Analysis failed: {msg}"})
+
+
+MAX_HISTORY = 10  # Cap stored Q&As so session memory stays bounded on Streamlit Cloud.
+
+
+def _append_history(entry: dict) -> None:
+    """Append a chat entry, trimming old ones (and their figures) beyond the cap."""
+    import streamlit as st
+
+    history = st.session_state.setdefault("chat_history", [])
+    history.append(entry)
+    # Drop figure objects from older entries first, then drop entries entirely.
+    for old in history[:-3]:
+        old.pop("plotly_figs", None)
+    del history[:-MAX_HISTORY]
+    st.session_state["last_answer"] = entry
 
 
 def _render_chat_section(df: pd.DataFrame) -> None:
@@ -283,7 +296,7 @@ def _render_chat_section(df: pd.DataFrame) -> None:
         st.caption("Ask any question about your data above.")
         return
 
-    for entry in reversed(history):
+    for n, entry in enumerate(reversed(history)):
         # User bubble
         st.markdown(
             f'<div class="bubble-wrap user-wrap">'
@@ -312,7 +325,7 @@ def _render_chat_section(df: pd.DataFrame) -> None:
         if figs:
             chart_cols = st.columns(min(len(figs), 2))
             for i, fig in enumerate(figs):
-                chart_cols[i % 2].plotly_chart(fig, width="stretch")
+                chart_cols[i % 2].plotly_chart(fig, width="stretch", key=f"chat_fig_{n}_{i}")
 
         # AI explanation
         if entry.get("explanation"):
