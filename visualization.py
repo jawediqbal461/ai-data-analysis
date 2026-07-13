@@ -405,7 +405,6 @@ def make_scatter_plot(df: pd.DataFrame, x_col: str, y_col: str,
     """Build an interactive scatter plot between two numeric columns."""
     fig = px.scatter(df, x=x_col, y=y_col, color=color_col,
                      title=f"{y_col} vs {x_col}",
-                     color_discrete_sequence=PLOTLY_COLORS,
-                     trendline="ols")
+                     color_discrete_sequence=PLOTLY_COLORS)
     fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
     return fig

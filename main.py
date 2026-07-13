@@ -185,7 +185,7 @@ def _render_overview_charts(df: pd.DataFrame) -> None:
     st.subheader("📊 Overview Charts")
     cols = st.columns(min(len(figs), 2))
     for i, fig in enumerate(figs):
-        cols[i % 2].plotly_chart(fig, use_container_width=True)
+        cols[i % 2].plotly_chart(fig, width="stretch")
 
 
 def _render_overview_tables(df: pd.DataFrame) -> None:
@@ -312,7 +312,7 @@ def _render_chat_section(df: pd.DataFrame) -> None:
         if figs:
             chart_cols = st.columns(min(len(figs), 2))
             for i, fig in enumerate(figs):
-                chart_cols[i % 2].plotly_chart(fig, use_container_width=True)
+                chart_cols[i % 2].plotly_chart(fig, width="stretch")
 
         # AI explanation
         if entry.get("explanation"):
@@ -322,7 +322,10 @@ def _render_chat_section(df: pd.DataFrame) -> None:
     if st.button("🗑️ Clear chat", key="clear_chat"):
         st.session_state["chat_history"] = []
         st.session_state.pop("last_answer", None)
-        st.rerun()
+        try:
+            st.rerun()
+        except AttributeError:
+            st.experimental_rerun()
 
 
 def _render_auto_insights(df: pd.DataFrame) -> None:
@@ -378,7 +381,7 @@ def _render_correlation(df: pd.DataFrame) -> None:
     if fig is None:
         return
     with st.expander("📈 Correlation Heatmap", expanded=False):
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
         st.caption("Values close to 1 or -1 indicate strong correlation. Close to 0 means little relationship.")
 
 
