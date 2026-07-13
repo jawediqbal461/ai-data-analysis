@@ -239,7 +239,11 @@ def _run_and_store(df: pd.DataFrame, question: str) -> None:
     try:
         result = qa_engine.answer_question(df, question)
         plotly_figs = visualization.make_plotly_charts(result)
-        explanation = ai_explainer.explain(result) if result.success else ""
+        skip = result.stats.get("skip_explain") if result.stats else False
+        explanation = ai_explainer.explain(result) if result.success and not skip else ""
+        # Don't echo the answer back as an "insight" — only keep it when it adds something.
+        if explanation and explanation.strip().rstrip(".") in result.answer_text:
+            explanation = ""
         entry = {
             "question": question,
             "result": result,

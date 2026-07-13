@@ -437,8 +437,10 @@ def _build_free_question_prompt(df: pd.DataFrame, question: str) -> str:
         lines.append(f"Top values in '{col}': {dict(top)}")
     lines.append(f"\nUser question: {question}")
     lines.append(
-        "Answer the question directly and concisely (2-4 sentences) using only facts "
-        "from the data above. Do not invent numbers that are not in the data."
+        "Answer conversationally, like a friendly analyst talking to a colleague - "
+        "directly address what was asked in 1-3 natural sentences. Use only facts "
+        "from the data above and never invent numbers. If the question is about "
+        "whether something exists in the data, check the column list and say yes or no clearly."
     )
     return "\n".join(lines)
 

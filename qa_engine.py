@@ -30,6 +30,9 @@ FREQ_WORDS = {"frequently", "frequent", "common", "often", "popular", "appears",
 COUNT_WORDS = {"count", "counts", "orders", "transactions", "records", "rows", "entries", "number", "times"}
 SALES_WORDS = {"sales", "sale", "revenue", "earnings"}
 TREND_WORDS = {"trend", "trends", "time", "monthly", "month", "daily"}
+PRESENCE_WORDS = {"added", "included", "include", "present", "available", "exist", "exists", "contain", "contains", "column", "columns", "field", "fields"}
+# Words too generic to be treated as a column-name candidate.
+_STOPWORDS = {"is", "are", "the", "a", "an", "in", "it", "of", "to", "this", "that", "data", "dataset", "file", "there", "any", "what", "which", "does", "do", "has", "have", "and", "or"} | PRESENCE_WORDS
 
 
 @dataclass
@@ -206,6 +209,11 @@ def answer_question(df: pd.DataFrame, question: str) -> QAResult:
             return _answer_total(df, question, metric, categorical)
         if words & FREQ_WORDS and categorical:
             return _answer_frequency(df, question, categorical[0])
+        # "Is <column> added / included / in it?" style presence questions.
+        if words & PRESENCE_WORDS:
+            presence = _answer_column_presence(df, question, words)
+            if presence is not None:
+                return presence
         # Count-all: "total students", "how many rows", "number of records", etc.
         if words & (TOTAL_WORDS | COUNT_WORDS | {"how", "many", "size", "students", "entries", "total"}):
             if not metric:
@@ -514,6 +522,46 @@ def _default_group_col(df: pd.DataFrame) -> Optional[str]:
     return min(cats, key=lambda c: df[c].nunique())
 
 
+def _answer_column_presence(df: pd.DataFrame, question: str, words: set[str]) -> Optional[QAResult]:
+    """Answer 'is <column> added / included in it?' style questions.
+
+    Checks every non-stopword in the question against the dataset's
+    column names (substring match either way, case-insensitive).
+
+    Returns:
+        QAResult saying yes/no, or None when the question has no
+        candidate term to check (caller falls through to other handlers).
+    """
+    candidates = [w for w in words if w not in _STOPWORDS and len(w) > 2]
+    if not candidates:
+        return None
+    norm_cols = {col: _normalize(col) for col in df.columns}
+    for term in candidates:
+        for col, norm in norm_cols.items():
+            if term in norm or norm in term:
+                return QAResult(
+                    question=question,
+                    answer_text=(
+                        f"Yes — the dataset has a '{col}' column. "
+                        f"All columns: {', '.join(df.columns)}."
+                    ),
+                    answer_value=col,
+                    chart_kind="none",
+                    stats={"skip_explain": True},
+                )
+    checked = ", ".join(f"'{t}'" for t in candidates)
+    return QAResult(
+        question=question,
+        answer_text=(
+            f"No — there is no column matching {checked} in this dataset. "
+            f"The columns are: {', '.join(df.columns)}."
+        ),
+        answer_value=None,
+        chart_kind="none",
+        stats={"skip_explain": True},
+    )
+
+
 def _answer_row_count(df: pd.DataFrame, question: str) -> QAResult:
     """Handle 'how many students/records/rows are there?' questions."""
     n = len(df)
@@ -527,7 +575,7 @@ def _answer_row_count(df: pd.DataFrame, question: str) -> QAResult:
         chart_title="",
         x_label="",
         y_label="",
-        stats={"row_count": n, "column_count": int(df.shape[1])},
+        stats={"row_count": n, "column_count": int(df.shape[1]), "skip_explain": True},
     )
 
 
@@ -561,25 +609,33 @@ def _answer_data_summary(df: pd.DataFrame, question: str) -> QAResult:
     num_cols = analysis.numeric_columns(df)
     cat_cols = analysis.categorical_columns(df)
 
+    # Identifier-like numeric columns (phone numbers, roll numbers, IDs)
+    # produce meaningless averages, so keep them out of the summary.
+    id_hints = ("id", "phone", "contact", "mobile", "roll", "no.")
+    measure_cols = [c for c in num_cols if not any(h in c.lower() for h in id_hints)]
+
     lines = [
-        f"This dataset has {rows:,} rows and {cols_count} columns.",
+        f"This dataset contains {rows:,} records with {cols_count} columns: "
+        f"{', '.join(df.columns)}."
     ]
-    if num_cols:
-        stats = df[num_cols].describe().round(2)
-        for col in num_cols[:3]:
-            lines.append(
-                f"• {col}: avg={stats.loc['mean', col]:,.2f}, "
-                f"min={stats.loc['min', col]:,.2f}, max={stats.loc['max', col]:,.2f}"
-            )
-    if cat_cols:
-        for col in cat_cols[:2]:
-            top = df[col].value_counts().index[0]
-            lines.append(f"• Most common {col}: {top}")
+    if measure_cols:
+        stats = df[measure_cols].describe().round(2)
+        parts = [
+            f"{col} averages {stats.loc['mean', col]:,.2f} "
+            f"(ranging {stats.loc['min', col]:,.2f} to {stats.loc['max', col]:,.2f})"
+            for col in measure_cols[:3]
+        ]
+        lines.append("Looking at the numbers: " + "; ".join(parts) + ".")
+    informative_cats = list(analysis.get_categorical_overview(df).keys())[:2]
+    for col in informative_cats:
+        top = df[col].value_counts()
+        share = top.iloc[0] / top.sum() * 100
+        lines.append(f"The most common {col} is '{top.index[0]}' ({share:.0f}% of records).")
 
     return QAResult(
         question=question,
         answer_text=" ".join(lines),
         success=True,
         chart_kind="none",
-        stats={"rows": rows, "cols": cols_count},
+        stats={"rows": rows, "cols": cols_count, "skip_explain": True},
     )
