@@ -1,13 +1,4 @@
-"""Chart generation for QA results using matplotlib + seaborn.
-
-Design rules applied to every chart:
-
-* seaborn's default palette (no garish colors), one hue per measure -
-  bars that compare a single measure share a single color,
-* descriptive title, labeled axes, recessive grid, no chart junk,
-* categories sorted by value with direct value labels on bars,
-* ``plt.tight_layout()`` and a timestamped PNG saved to ``charts/``.
-"""
+"""Chart generation using Plotly (interactive) + matplotlib (static/PDF)."""
 
 from __future__ import annotations
 
@@ -15,22 +6,24 @@ import os
 from datetime import datetime
 
 import matplotlib
-
-matplotlib.use("Agg")  # Render off-screen; works headless and in Streamlit.
+matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 import seaborn as sns
 
 import analysis
 from qa_engine import QAResult
 
 CHARTS_DIR = "charts"
-MAX_BARS = 12  # Cap categories per chart so labels stay readable.
+MAX_BARS = 12
 
 sns.set_theme(style="whitegrid", palette="deep")
-# First color of seaborn's default 'deep' palette - used for single-measure marks.
 ACCENT = sns.color_palette("deep")[0]
+
+PLOTLY_COLORS = px.colors.qualitative.Set2
 
 
 def _ensure_charts_dir() -> str:
@@ -295,3 +288,124 @@ def make_charts(result: QAResult) -> list[tuple[plt.Figure, str, str]]:
         path = save_chart(fig, prefix=kind)
         charts.append((fig, path, kind))
     return charts
+
+
+# --------------------------------------------------------------------------
+# Plotly interactive charts
+# --------------------------------------------------------------------------
+
+def plotly_bar(data: pd.Series, title: str, x_label: str, y_label: str) -> go.Figure:
+    data = data.head(MAX_BARS).sort_values(ascending=True)
+    fig = px.bar(
+        x=data.values, y=data.index.astype(str),
+        orientation="h", title=title,
+        labels={"x": x_label, "y": y_label},
+        color=data.values, color_continuous_scale="Blues",
+        text=data.values,
+    )
+    fig.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
+    fig.update_layout(coloraxis_showscale=False, plot_bgcolor="rgba(0,0,0,0)",
+                      paper_bgcolor="rgba(0,0,0,0)", height=max(300, 40 * len(data)))
+    return fig
+
+
+def plotly_pie(data: pd.Series, title: str) -> go.Figure:
+    if len(data) > 8:
+        return plotly_bar(data, title, "Value", str(data.index.name or "Category"))
+    fig = px.pie(values=data.values, names=data.index.astype(str), title=title,
+                 color_discrete_sequence=PLOTLY_COLORS)
+    fig.update_traces(textposition="inside", textinfo="percent+label")
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+    return fig
+
+
+def plotly_line(data: pd.Series, title: str, x_label: str, y_label: str) -> go.Figure:
+    fig = px.line(x=data.index.astype(str), y=data.values, title=title,
+                  labels={"x": x_label, "y": y_label}, markers=True,
+                  color_discrete_sequence=["#4C72B0"])
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+    return fig
+
+
+def plotly_histogram(data: pd.Series, title: str, x_label: str) -> go.Figure:
+    fig = px.histogram(data, title=title, labels={"value": x_label},
+                       nbins=20, color_discrete_sequence=["#4C72B0"])
+    fig.add_vline(x=float(data.mean()), line_dash="dash", line_color="red",
+                  annotation_text=f"mean={data.mean():,.2f}")
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                      showlegend=False)
+    return fig
+
+
+def plotly_box(data: pd.Series, title: str, x_label: str) -> go.Figure:
+    fig = px.box(data, title=title, labels={"value": x_label},
+                 color_discrete_sequence=["#4C72B0"])
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                      showlegend=False)
+    return fig
+
+
+def make_plotly_charts(result: QAResult) -> list[go.Figure]:
+    """Build interactive Plotly charts for a QAResult."""
+    data = result.supporting_data
+    if data is None or result.chart_kind == "none" or len(data) == 0:
+        return []
+    figs = []
+    for kind in _companion_kinds(result):
+        if kind == "pie":
+            figs.append(plotly_pie(data, result.chart_title))
+        elif kind == "line":
+            figs.append(plotly_line(data, result.chart_title, result.x_label, result.y_label))
+        elif kind == "hist":
+            figs.append(plotly_histogram(data, result.chart_title, result.x_label))
+        elif kind == "box":
+            figs.append(plotly_box(data, f"Spread of {result.x_label}", result.x_label))
+        else:
+            figs.append(plotly_bar(data, result.chart_title, result.x_label, result.y_label))
+    return figs
+
+
+def make_plotly_overview_charts(df: pd.DataFrame,
+                                 max_categorical: int = 2,
+                                 max_numeric: int = 2) -> list[go.Figure]:
+    """Build interactive overview charts for the uploaded dataset."""
+    figs = []
+    cat_overview = analysis.get_categorical_overview(df)
+    cat_cols = sorted(cat_overview, key=lambda c: len(cat_overview[c]))[:max_categorical]
+    for col in cat_cols:
+        counts = analysis.get_value_counts(df, col)
+        figs.append(plotly_bar(counts, f"Records by {col}", "Count", col))
+
+    num_cols = analysis.numeric_columns(df)[:max_numeric]
+    for col in num_cols:
+        values = df[col].dropna()
+        if values.empty or values.nunique() < 2:
+            continue
+        figs.append(plotly_histogram(values, f"Distribution of {col}", col))
+    return figs
+
+
+def make_correlation_heatmap(df: pd.DataFrame) -> go.Figure | None:
+    """Build an interactive correlation heatmap for numeric columns."""
+    num_cols = analysis.numeric_columns(df)
+    if len(num_cols) < 2:
+        return None
+    corr = df[num_cols].corr().round(2)
+    fig = px.imshow(
+        corr, text_auto=True, title="Correlation Heatmap",
+        color_continuous_scale="RdBu_r", zmin=-1, zmax=1,
+        aspect="auto",
+    )
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+    return fig
+
+
+def make_scatter_plot(df: pd.DataFrame, x_col: str, y_col: str,
+                      color_col: str | None = None) -> go.Figure:
+    """Build an interactive scatter plot between two numeric columns."""
+    fig = px.scatter(df, x=x_col, y=y_col, color=color_col,
+                     title=f"{y_col} vs {x_col}",
+                     color_discrete_sequence=PLOTLY_COLORS,
+                     trendline="ols")
+    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
+    return fig

@@ -175,29 +175,17 @@ def _render_summary(df: pd.DataFrame) -> None:
         st.dataframe(df.head(10), width='stretch')
 
 
-def _render_overview_charts(charts: list[tuple]) -> None:
-    """Render the two real, data-driven overview charts at the top of the page.
-
-    One bar chart of the most informative categorical column and one
-    histogram of the first numeric column - both built directly from the
-    uploaded data (never placeholder/dummy figures).
-
-    Args:
-        charts: Output of visualization.make_overview_charts(df, ...).
-    """
+def _render_overview_charts(df: pd.DataFrame) -> None:
+    """Render interactive Plotly overview charts."""
     import streamlit as st
 
-    if not charts:
+    figs = visualization.make_plotly_overview_charts(df, max_categorical=2, max_numeric=2)
+    if not figs:
         return
-    st.subheader("Overview charts")
-    cols = st.columns(len(charts))
-    for col, (fig, _path, _kind, name) in zip(cols, charts):
-        try:
-            col.pyplot(fig)
-            col.caption(name)
-            visualization.plt.close(fig)
-        except Exception:
-            col.warning(f"Chart for '{name}' could not be rendered.")
+    st.subheader("📊 Overview Charts")
+    cols = st.columns(min(len(figs), 2))
+    for i, fig in enumerate(figs):
+        cols[i % 2].plotly_chart(fig, use_container_width=True)
 
 
 def _render_overview_tables(df: pd.DataFrame) -> None:
@@ -223,79 +211,175 @@ def _render_overview_tables(df: pd.DataFrame) -> None:
             table_cols[i % len(table_cols)].dataframe(table, width='stretch')
 
 
+CHAT_CSS = """
+<style>
+.user-bubble {
+    background: #4C72B0; color: white; border-radius: 18px 18px 4px 18px;
+    padding: 10px 16px; margin: 6px 0 6px 15%; display: inline-block;
+    max-width: 85%; word-wrap: break-word;
+}
+.ai-bubble {
+    background: #f0f2f6; color: #1a1a1a; border-radius: 18px 18px 18px 4px;
+    padding: 10px 16px; margin: 6px 15% 6px 0; display: inline-block;
+    max-width: 85%; word-wrap: break-word;
+}
+.bubble-wrap { display: flex; flex-direction: column; }
+.user-wrap { align-items: flex-end; }
+.ai-wrap { align-items: flex-start; }
+</style>
+"""
+
+
 def _run_and_store(df: pd.DataFrame, question: str) -> None:
-    """Run the QA pipeline and stash the result in session state.
-
-    Storing the result (rather than rendering it inline) lets the answer
-    stay pinned at the top of the page across reruns triggered by other
-    widgets (e.g. the dark-mode toggle), until a new question is run or a
-    different file is uploaded.
-
-    Args:
-        df: The uploaded dataset.
-        question: The user's free-text question from the sidebar.
-    """
+    """Run pipeline, store result in chat history and last_answer."""
     import streamlit as st
 
     if not question.strip():
-        st.session_state["last_answer"] = {"error": "Please type a question first."}
         return
     try:
-        result, charts, explanation = run_pipeline(df, question)
-        st.session_state["last_answer"] = {
+        result = qa_engine.answer_question(df, question)
+        plotly_figs = visualization.make_plotly_charts(result)
+        explanation = ai_explainer.explain(result) if result.success else ""
+        entry = {
             "question": question,
             "result": result,
-            "charts": charts,
+            "plotly_figs": plotly_figs,
             "explanation": explanation,
         }
+        st.session_state.setdefault("chat_history", []).append(entry)
+        st.session_state["last_answer"] = entry
     except Exception as exc:
         msg = str(exc) or "An unexpected error occurred."
-        st.session_state["last_answer"] = {
-            "error": f"Analysis failed: {msg}. Check the dataset and try again."
-        }
+        entry = {"question": question, "error": f"Analysis failed: {msg}"}
+        st.session_state.setdefault("chat_history", []).append(entry)
+        st.session_state["last_answer"] = entry
 
 
-def _render_answer_top() -> None:
-    """Render the most recent question's answer, charts and explanation.
-
-    Shown at the very top of the main page - above the dataset summary and
-    overview - since a fresh answer is the thing the user just asked for.
-    Every chart here comes straight from the pandas result for this
-    question, never a placeholder.
-    """
+def _render_chat_section(df: pd.DataFrame) -> None:
+    """Render chat-style Q&A with history and interactive charts."""
     import streamlit as st
 
-    answer = st.session_state.get("last_answer")
-    if not answer:
+    st.markdown(CHAT_CSS, unsafe_allow_html=True)
+    st.subheader("💬 Ask AI")
+
+    # Question input bar
+    q_col, btn_col = st.columns([5, 1])
+    question = q_col.text_input(
+        "question_main",
+        key="question_main_input",
+        placeholder="e.g. Which category has the highest sales?",
+        label_visibility="collapsed",
+    )
+    if btn_col.button("Ask", type="primary", key="btn_ask_main"):
+        if not question.strip():
+            st.warning("Please type a question.")
+        else:
+            with st.spinner("🤖 AI is thinking..."):
+                _run_and_store(df, question)
+
+    # Chat history — newest first
+    history = st.session_state.get("chat_history", [])
+    if not history:
+        st.caption("Ask any question about your data above.")
         return
-    st.subheader("Answer")
-    if "error" in answer:
-        st.warning(answer["error"])
-        st.divider()
-        return
-    result: QAResult = answer["result"]
-    st.caption(f"Q: {answer['question']}")
-    if not result.success:
-        st.error(
-            f"Could not answer: {result.answer_text}"
-            if "Available columns" not in result.answer_text
-            else result.answer_text
+
+    for entry in reversed(history):
+        # User bubble
+        st.markdown(
+            f'<div class="bubble-wrap user-wrap">'
+            f'<div class="user-bubble">🧑 {entry["question"]}</div></div>',
+            unsafe_allow_html=True,
         )
-        st.divider()
+        # AI bubble
+        if "error" in entry:
+            st.markdown(
+                f'<div class="bubble-wrap ai-wrap">'
+                f'<div class="ai-bubble">⚠️ {entry["error"]}</div></div>',
+                unsafe_allow_html=True,
+            )
+            continue
+
+        result: QAResult = entry["result"]
+        answer_text = result.answer_text
+        st.markdown(
+            f'<div class="bubble-wrap ai-wrap">'
+            f'<div class="ai-bubble">🤖 {answer_text}</div></div>',
+            unsafe_allow_html=True,
+        )
+
+        # Plotly charts below bubble
+        figs = entry.get("plotly_figs", [])
+        if figs:
+            chart_cols = st.columns(min(len(figs), 2))
+            for i, fig in enumerate(figs):
+                chart_cols[i % 2].plotly_chart(fig, use_container_width=True)
+
+        # AI explanation
+        if entry.get("explanation"):
+            st.info(f"💡 {entry['explanation']}")
+
+    # Clear history button
+    if st.button("🗑️ Clear chat", key="clear_chat"):
+        st.session_state["chat_history"] = []
+        st.session_state.pop("last_answer", None)
+        st.rerun()
+
+
+def _render_auto_insights(df: pd.DataFrame) -> None:
+    """Show 5 AI-generated key insights after Analyse is clicked."""
+    import streamlit as st
+
+    if "auto_insights" not in st.session_state:
+        with st.spinner("🤖 Generating AI insights..."):
+            st.session_state["auto_insights"] = ai_explainer.generate_insights(df)
+
+    insights = st.session_state.get("auto_insights", [])
+    if not insights:
         return
-    st.success(f"**Answer:** {result.answer_text}")
-    charts = answer["charts"]
-    if charts:
-        cols = st.columns(len(charts))
-        for col, (fig, _path, _kind) in zip(cols, charts):
-            try:
-                col.pyplot(fig)
-                visualization.plt.close(fig)
-            except Exception:
-                col.warning("Chart could not be rendered.")
-    if answer.get("explanation"):
-        st.info(f"**AI insight:** {answer['explanation']}")
-    st.divider()
+    st.subheader("🔎 Key Insights")
+    for insight in insights:
+        st.markdown(f"- {insight}")
+
+
+def _render_data_quality(df: pd.DataFrame) -> None:
+    """Show data quality report: missing values, duplicates, column types."""
+    import streamlit as st
+
+    with st.expander("🧹 Data Quality Report", expanded=False):
+        col1, col2, col3, col4 = st.columns(4)
+        total_missing = int(df.isna().sum().sum())
+        duplicates = int(df.duplicated().sum())
+        num_cols = len(analysis.numeric_columns(df))
+        cat_cols = len(analysis.categorical_columns(df))
+
+        col1.metric("Missing Values", total_missing,
+                    delta="clean ✅" if total_missing == 0 else f"{total_missing} cells ⚠️",
+                    delta_color="normal" if total_missing == 0 else "inverse")
+        col2.metric("Duplicate Rows", duplicates,
+                    delta="none ✅" if duplicates == 0 else f"{duplicates} found ⚠️",
+                    delta_color="normal" if duplicates == 0 else "inverse")
+        col3.metric("Numeric Columns", num_cols)
+        col4.metric("Categorical Columns", cat_cols)
+
+        if total_missing > 0:
+            st.markdown("**Missing values per column:**")
+            missing_df = df.isna().sum()
+            missing_df = missing_df[missing_df > 0].reset_index()
+            missing_df.columns = ["Column", "Missing Count"]
+            missing_df["% Missing"] = (missing_df["Missing Count"] / len(df) * 100).round(1)
+            st.dataframe(missing_df, width='stretch', hide_index=True)
+
+
+def _render_correlation(df: pd.DataFrame) -> None:
+    """Show interactive correlation heatmap if 2+ numeric columns exist."""
+    import streamlit as st
+
+    fig = visualization.make_correlation_heatmap(df)
+    if fig is None:
+        return
+    with st.expander("📈 Correlation Heatmap", expanded=False):
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption("Values close to 1 or -1 indicate strong correlation. Close to 0 means little relationship.")
 
 
 def _render_top_bar() -> None:
@@ -315,15 +399,11 @@ def _render_top_bar() -> None:
 
     st.markdown(
         """
-**What this app does:**
-- 📂 **Upload any CSV** — no template or sample file required
-- 🔍 **Auto-analysis** — overview charts and statistics generated instantly on click
-- 💬 **Ask anything** — type any question in plain English; AI answers from your real data
-- 📊 **Smart charts** — bar, pie, histogram and box plots chosen automatically per question
-- 📥 **Download report** — export a full analysis as CSV or PDF
-- 🌙 **Dark / light mode** — toggle top-right anytime
+**Features:**
+📂 Upload any CSV &nbsp;|&nbsp; 🤖 AI-powered Q&A with chat history &nbsp;|&nbsp; 📊 Interactive Plotly charts
+🔎 Auto insights &nbsp;|&nbsp; 📈 Correlation heatmap &nbsp;|&nbsp; 🧹 Data quality report &nbsp;|&nbsp; 📥 CSV/PDF download
         """,
-        unsafe_allow_html=False,
+        unsafe_allow_html=True,
     )
 
 
@@ -402,38 +482,46 @@ def run_streamlit_app() -> None:
     _render_top_bar()
 
     if df is None:
-        st.info("Upload a CSV file in the sidebar to get started.")
+        st.info("⬅️ Upload a CSV file in the sidebar to get started.")
         return
 
     if analyse_clicked:
         with st.spinner("Analysing dataset..."):
             st.session_state["analysis_done"] = True
-            st.session_state["overview_charts"] = visualization.make_overview_charts(
-                df, max_categorical=1, max_numeric=1
-            )
+            st.session_state.pop("auto_insights", None)  # refresh insights on re-analyse
 
     if not st.session_state.get("analysis_done"):
-        st.info("Click **Analyse** in the sidebar to begin exploring your dataset.")
+        st.info("Click **🔍 Analyse** in the sidebar to begin.")
         return
 
-    overview_charts = st.session_state.get("overview_charts", [])
-
-    # Question bar at the top of the main content area.
-    _render_question_bar(df)
+    # ── Chat Q&A (top, most prominent) ──────────────────────────────────
+    _render_chat_section(df)
     st.divider()
 
-    # Answer pinned right below the question bar.
-    _render_answer_top()
-
-    # Compact report download buttons.
-    _render_download_buttons(df, overview_charts)
+    # ── AI Insights ──────────────────────────────────────────────────────
+    _render_auto_insights(df)
     st.divider()
 
-    _render_overview_charts(overview_charts)
+    # ── Overview Charts (interactive) ────────────────────────────────────
+    _render_overview_charts(df)
     st.divider()
+
+    # ── Correlation Heatmap ──────────────────────────────────────────────
+    _render_correlation(df)
+
+    # ── Data Quality ─────────────────────────────────────────────────────
+    _render_data_quality(df)
+
+    # ── Dataset Summary ──────────────────────────────────────────────────
     _render_summary(df)
     st.divider()
+
+    # ── Stats Tables ─────────────────────────────────────────────────────
     _render_overview_tables(df)
+    st.divider()
+
+    # ── Report Download ──────────────────────────────────────────────────
+    _render_download_buttons(df, [])
 
 
 # --------------------------------------------------------------------------

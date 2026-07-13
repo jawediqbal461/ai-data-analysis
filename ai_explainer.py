@@ -311,6 +311,75 @@ def _call_anthropic(api_key: str, model: str, prompt: str) -> str:
     return response.content[0].text.strip()
 
 
+def generate_insights(df: pd.DataFrame, provider: Optional[str] = None) -> list[str]:
+    """Generate 5 key AI insights about the dataset after Analyse is clicked.
+
+    Args:
+        df: The uploaded dataset.
+        provider: Provider name overriding AI_PROVIDER setting.
+
+    Returns:
+        List of 5 insight strings. Falls back to template insights if AI unavailable.
+    """
+    name = (provider or PROVIDER).lower()
+    config = PROVIDER_CONFIG.get(name)
+    api_key = os.getenv(config["env_key"] or "") if config else None
+    if not config or not api_key:
+        return _template_insights(df)
+    try:
+        numeric = analysis.numeric_columns(df)
+        categorical = analysis.categorical_columns(df)
+        prompt = (
+            f"Dataset: {len(df)} rows, {df.shape[1]} columns.\n"
+            f"Numeric columns: {', '.join(numeric) or 'none'}\n"
+            f"Categorical columns: {', '.join(categorical) or 'none'}\n"
+        )
+        if numeric:
+            prompt += f"Stats:\n{df[numeric].describe().round(2).to_string()}\n"
+        for col in categorical[:3]:
+            prompt += f"Top {col}: {dict(df[col].value_counts().head(3))}\n"
+        prompt += (
+            "\nWrite exactly 5 short, specific, data-driven insights about this dataset. "
+            "Each insight must mention actual numbers from the data. "
+            "Reply with exactly 5 lines, one insight per line, no numbering."
+        )
+        model = os.getenv("AI_MODEL") or (config["model"] or "")
+        if name == "claude":
+            text = _call_anthropic(api_key, model, prompt)
+        else:
+            text = _call_openai_compatible(api_key, config["base_url"], model, prompt)
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        return lines[:5] if len(lines) >= 3 else _template_insights(df)
+    except Exception:
+        return _template_insights(df)
+
+
+def _template_insights(df: pd.DataFrame) -> list[str]:
+    """Build data-driven insights from pandas without AI."""
+    insights = []
+    insights.append(f"Dataset contains {len(df):,} rows and {df.shape[1]} columns.")
+    missing = int(df.isna().sum().sum())
+    if missing:
+        insights.append(f"There are {missing:,} missing values across the dataset.")
+    else:
+        insights.append("No missing values found — dataset is complete.")
+    numeric = analysis.numeric_columns(df)
+    if numeric:
+        col = numeric[0]
+        insights.append(
+            f"{col} ranges from {df[col].min():,.2f} to {df[col].max():,.2f} "
+            f"with an average of {df[col].mean():,.2f}."
+        )
+    cats = list(analysis.get_categorical_overview(df).keys())
+    if cats:
+        top_val = df[cats[0]].value_counts().index[0]
+        top_cnt = int(df[cats[0]].value_counts().iloc[0])
+        insights.append(f"Most common {cats[0]} is '{top_val}' appearing {top_cnt:,} times.")
+    dups = int(df.duplicated().sum())
+    insights.append(f"Duplicate rows: {dups} ({dups/len(df)*100:.1f}% of data)." if dups else "No duplicate rows found.")
+    return insights[:5]
+
+
 def answer_free_question(df: pd.DataFrame, question: str, provider: Optional[str] = None) -> str:
     """Answer any free-text question about the dataset using one LLM call.
 
