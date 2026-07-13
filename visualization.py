@@ -1,18 +1,19 @@
-"""Chart generation using Plotly (interactive) + matplotlib (static/PDF)."""
+"""Chart generation using Plotly (interactive) + matplotlib (static/PDF only).
+
+matplotlib is imported LAZILY inside PDF-only functions to avoid the
+segmentation fault that occurs when matplotlib initialises at module
+load time in Streamlit Cloud's headless Linux environment.
+All interactive (Streamlit) charts use Plotly exclusively.
+"""
 
 from __future__ import annotations
 
 import os
 from datetime import datetime
 
-import matplotlib
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import seaborn as sns
 
 import analysis
 from qa_engine import QAResult
@@ -20,10 +21,17 @@ from qa_engine import QAResult
 CHARTS_DIR = "charts"
 MAX_BARS = 12
 
-sns.set_theme(style="whitegrid", palette="deep")
-ACCENT = sns.color_palette("deep")[0]
-
 PLOTLY_COLORS = px.colors.qualitative.Set2
+
+
+def _mpl():
+    """Lazy-load matplotlib + seaborn only when needed (PDF export)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    sns.set_theme(style="whitegrid", palette="deep")
+    return plt, sns
 
 
 def _ensure_charts_dir() -> str:
@@ -36,16 +44,8 @@ def _ensure_charts_dir() -> str:
     return CHARTS_DIR
 
 
-def save_chart(fig: plt.Figure, prefix: str = "chart") -> str:
-    """Save a figure to charts/ as a timestamped PNG.
-
-    Args:
-        fig: The matplotlib figure to save.
-        prefix: Filename prefix describing the chart.
-
-    Returns:
-        The path of the saved PNG file.
-    """
+def save_chart(fig, prefix: str = "chart") -> str:
+    """Save a matplotlib figure to charts/ as a timestamped PNG."""
     _ensure_charts_dir()
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     path = os.path.join(CHARTS_DIR, f"{prefix}_{stamp}.png")
@@ -53,143 +53,74 @@ def save_chart(fig: plt.Figure, prefix: str = "chart") -> str:
     return path
 
 
-def bar_chart(data: pd.Series, title: str, x_label: str, y_label: str) -> plt.Figure:
-    """Draw a horizontal bar chart of one measure across categories.
-
-    Args:
-        data: Series indexed by category, sorted descending.
-        title: Descriptive chart title.
-        x_label: Label for the value axis.
-        y_label: Label for the category axis.
-
-    Returns:
-        The finished matplotlib figure.
-    """
+def bar_chart(data: pd.Series, title: str, x_label: str, y_label: str):
+    plt, sns = _mpl()
+    accent = sns.color_palette("deep")[0]
     data = data.head(MAX_BARS)
     fig, ax = plt.subplots(figsize=(8, max(3.0, 0.5 * len(data) + 1)))
-    # One color for one measure: differences are carried by length, not hue.
-    ax.barh(data.index.astype(str), data.values, color=ACCENT, height=0.62)
-    ax.invert_yaxis()  # Largest category on top.
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    # Direct value labels at bar ends replace squinting at the axis.
-    for i, value in enumerate(data.values):
-        ax.text(value, i, f" {value:,.0f}", va="center", fontsize=9, color="dimgray")
-    ax.grid(axis="y", visible=False)  # Keep only the recessive value-axis grid.
+    ax.barh(data.index.astype(str), data.values, color=accent, height=0.62)
+    ax.invert_yaxis()
+    ax.set_title(title); ax.set_xlabel(x_label); ax.set_ylabel(y_label)
+    for i, v in enumerate(data.values):
+        ax.text(v, i, f" {v:,.0f}", va="center", fontsize=9, color="dimgray")
+    ax.grid(axis="y", visible=False)
     sns.despine(fig=fig, left=True, bottom=True)
     fig.tight_layout()
     return fig
 
 
-def pie_chart(data: pd.Series, title: str) -> plt.Figure:
-    """Draw a pie chart of category shares (falls back to bar if crowded).
-
-    Args:
-        data: Series indexed by category with positive values.
-        title: Descriptive chart title.
-
-    Returns:
-        The finished matplotlib figure.
-    """
+def pie_chart(data: pd.Series, title: str):
+    plt, sns = _mpl()
     if len(data) > 6:
-        # Pies with many slices are unreadable - a bar chart says it better.
         return bar_chart(data, title, "Value", str(data.index.name or "Category"))
     fig, ax = plt.subplots(figsize=(7, 5))
     colors = sns.color_palette("deep", len(data))
-    ax.pie(
-        data.values,
-        labels=[str(i) for i in data.index],
-        autopct="%1.1f%%",
-        colors=colors,
-        wedgeprops={"linewidth": 2, "edgecolor": "white"},  # gaps between slices
-    )
+    ax.pie(data.values, labels=[str(i) for i in data.index],
+           autopct="%1.1f%%", colors=colors,
+           wedgeprops={"linewidth": 2, "edgecolor": "white"})
     ax.set_title(title)
     fig.tight_layout()
     return fig
 
 
-def line_chart(data: pd.Series, title: str, x_label: str, y_label: str) -> plt.Figure:
-    """Draw a line chart of a measure over an ordered index (e.g. months).
-
-    Args:
-        data: Series indexed by ordered labels (time periods).
-        title: Descriptive chart title.
-        x_label: Label for the x axis.
-        y_label: Label for the y axis.
-
-    Returns:
-        The finished matplotlib figure.
-    """
+def line_chart(data: pd.Series, title: str, x_label: str, y_label: str):
+    plt, sns = _mpl()
+    accent = sns.color_palette("deep")[0]
     fig, ax = plt.subplots(figsize=(9, 4.5))
-    ax.plot(data.index.astype(str), data.values, color=ACCENT, linewidth=2, marker="o", markersize=5)
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.plot(data.index.astype(str), data.values, color=accent, linewidth=2, marker="o", markersize=5)
+    ax.set_title(title); ax.set_xlabel(x_label); ax.set_ylabel(y_label)
     ax.tick_params(axis="x", rotation=45)
     sns.despine(fig=fig)
     fig.tight_layout()
     return fig
 
 
-def histogram(data: pd.Series, title: str, x_label: str, y_label: str) -> plt.Figure:
-    """Draw a histogram of raw numeric values with a mean marker line.
-
-    Args:
-        data: Raw numeric values (nulls already dropped).
-        title: Descriptive chart title.
-        x_label: Label for the value axis.
-        y_label: Label for the count axis.
-
-    Returns:
-        The finished matplotlib figure.
-    """
+def histogram(data: pd.Series, title: str, x_label: str, y_label: str):
+    plt, sns = _mpl()
+    accent = sns.color_palette("deep")[0]
     fig, ax = plt.subplots(figsize=(8, 4.5))
-    sns.histplot(data, bins=20, color=ACCENT, edgecolor="white", ax=ax)
+    sns.histplot(data, bins=20, color=accent, edgecolor="white", ax=ax)
     mean = float(data.mean())
     ax.axvline(mean, color="dimgray", linestyle="--", linewidth=1.5)
     ax.text(mean, ax.get_ylim()[1] * 0.95, f" mean = {mean:,.2f}", fontsize=9, color="dimgray")
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_title(title); ax.set_xlabel(x_label); ax.set_ylabel(y_label)
     sns.despine(fig=fig)
     fig.tight_layout()
     return fig
 
 
-def box_chart(data: pd.Series, title: str, x_label: str, y_label: str) -> plt.Figure:
-    """Draw a horizontal box plot summarizing a numeric distribution's spread.
-
-    Args:
-        data: Raw numeric values (nulls already dropped).
-        title: Descriptive chart title.
-        x_label: Label for the value axis.
-        y_label: Label for the category axis (usually blank for one box).
-
-    Returns:
-        The finished matplotlib figure.
-    """
+def box_chart(data: pd.Series, title: str, x_label: str, y_label: str):
+    plt, sns = _mpl()
+    accent = sns.color_palette("deep")[0]
     fig, ax = plt.subplots(figsize=(8, 3))
-    sns.boxplot(x=data, color=ACCENT, ax=ax, width=0.4)
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    sns.boxplot(x=data, color=accent, ax=ax, width=0.4)
+    ax.set_title(title); ax.set_xlabel(x_label); ax.set_ylabel(y_label)
     sns.despine(fig=fig, left=True)
     fig.tight_layout()
     return fig
 
 
-def _render_one(data: pd.Series, kind: str, result: QAResult) -> plt.Figure:
-    """Dispatch to the matplotlib builder for a single chart kind.
-
-    Args:
-        data: Supporting data to plot.
-        kind: One of 'bar', 'pie', 'line', 'hist', 'box'.
-        result: The QAResult providing title/axis labels.
-
-    Returns:
-        The finished matplotlib figure for that chart kind.
-    """
+def _render_one(data: pd.Series, kind: str, result: QAResult):
     if kind == "pie":
         return pie_chart(data, result.chart_title)
     if kind == "line":
@@ -198,7 +129,7 @@ def _render_one(data: pd.Series, kind: str, result: QAResult) -> plt.Figure:
         return histogram(data, result.chart_title, result.x_label, result.y_label)
     if kind == "box":
         return box_chart(data, f"Spread of {result.x_label}", result.x_label, "")
-    return bar_chart(data, result.chart_title, result.x_label, result.y_label)  # bar default
+    return bar_chart(data, result.chart_title, result.x_label, result.y_label)
 
 
 def _companion_kinds(result: QAResult) -> list[str]:
@@ -230,7 +161,7 @@ def _companion_kinds(result: QAResult) -> list[str]:
 
 def make_overview_charts(
     df: pd.DataFrame, max_categorical: int = 3, max_numeric: int = 2
-) -> list[tuple[plt.Figure, str, str, str]]:
+) -> list[tuple]:
     """Build an automatic set of charts summarizing an uploaded dataset.
 
     Shown right after a file loads, before any question is asked: one bar
@@ -246,7 +177,7 @@ def make_overview_charts(
     Returns:
         List of (figure, saved PNG path, chart kind, column name) tuples.
     """
-    charts: list[tuple[plt.Figure, str, str, str]] = []
+    charts: list[tuple] = []
 
     cat_overview = analysis.get_categorical_overview(df)
     # Fewest-category columns first: they make the cleanest bar charts.
@@ -268,7 +199,7 @@ def make_overview_charts(
     return charts
 
 
-def make_charts(result: QAResult) -> list[tuple[plt.Figure, str, str]]:
+def make_charts(result: QAResult) -> list[tuple]:
     """Build and save every chart suggested for a QAResult.
 
     Args:
