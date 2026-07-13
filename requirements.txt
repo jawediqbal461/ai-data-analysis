@@ -10,6 +10,12 @@ plotly==6.9.0
 # Web interface
 streamlit==1.53.1
 
+# Pin native serialization libs to mature versions — the unpinned latest
+# builds (protobuf 6.33.x, pyarrow 25) segfault on Streamlit Cloud Linux.
+protobuf==5.29.5
+pyarrow==21.0.0
+pillow==11.3.0
+
 # Configuration (.env loading)
 python-dotenv==1.2.2
 
